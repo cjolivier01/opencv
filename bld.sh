@@ -23,8 +23,8 @@ CXX_COMPILER="${CONDA_PREFIX}/bin/g++"
 #  -D CUDA_NVCC_FLAGS='-ccbin ${CXX_COMPILER} -Xcompiler ,\"-std=c++14\"' \
 
 cmake -D CMAKE_BUILD_TYPE=RELEASE \
-  -D CMAKE_CXX_STANDARD=14 \
-  -D CUDA_NVCC_FLAGS='-Xcompiler ,\"-std=c++14\"' \
+  -D CMAKE_CXX_STANDARD=17 \
+  -D CUDA_NVCC_FLAGS='-ccbin /home/colivier/.conda/envs/HockeyMOM/bin/g++ -Xcompiler ,\"-std=c++14\"' \
   -D CMAKE_C_COMPILER="${C_COMPILER}" \
   -D CMAKE_CXX_COMPILER="${CXX_COMPILER}" \
   -D CMAKE_INSTALL_PREFIX=${CONDA_PREFIX} \
@@ -39,6 +39,8 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
   -D CUDA_FAST_MATH=1 \
   -D CUDA_ARCH_BIN=7.5 \
   -D WITH_CUBLAS=1 \
+  -D OPENCV_DNN_CUDA=0 \
+  -D WITH_EIGEN=0 \
   -D OPENCV_EXTRA_MODULES_PATH=~/src/opencv_contrib/modules \
   -D HAVE_opencv_python3=ON \
   -D BUILD_EXAMPLES=OFF ..
