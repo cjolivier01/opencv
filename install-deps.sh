@@ -1,3 +1,4 @@
 #!/bin/bash
-mamba install glib
+mamba install glib libdc1394
+
 
