@@ -22,7 +22,7 @@ CXX_COMPILER="${CONDA_PREFIX}/bin/g++"
 
 #  -D CUDA_NVCC_FLAGS='-ccbin ${CXX_COMPILER} -Xcompiler ,\"-std=c++14\"' \
 
-cmake -D CMAKE_BUILD_TYPE=RELEASE \
+cmake -D CMAKE_BUILD_TYPE=Debug \
   -D CMAKE_CXX_STANDARD=17 \
   -D CUDA_NVCC_FLAGS='-ccbin /home/colivier/.conda/envs/HockeyMOM/bin/g++ -Xcompiler ,\"-std=c++14\"' \
   -D CMAKE_C_COMPILER="${C_COMPILER}" \
