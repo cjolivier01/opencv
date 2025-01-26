@@ -1,5 +1,7 @@
-INSTALL_PREFIX=/usr/local
-#INSTALL_PREFIX=$CONDA_PREFIX
+#!/bin/bash
+
+#INSTALL_PREFIX=/usr/local
+INSTALL_PREFIX=$CONDA_PREFIX
 
 cmake  \
   -GNinja \
