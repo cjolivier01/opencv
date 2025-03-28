@@ -12,6 +12,7 @@ ocv_add_dispatched_file(mean SSE2 AVX2 LASX)
 ocv_add_dispatched_file(merge SSE2 AVX2 LASX)
 ocv_add_dispatched_file(split SSE2 AVX2 LASX)
 ocv_add_dispatched_file(sum SSE2 AVX2 LASX)
+ocv_add_dispatched_file(norm SSE2 SSE4_1 AVX AVX2 NEON_DOTPROD LASX)
 
 # dispatching for accuracy tests
 ocv_add_dispatched_file_force_all(test_intrin128 TEST SSE2 SSE3 SSSE3 SSE4_1 SSE4_2 AVX FP16 AVX2 AVX512_SKX)
@@ -20,7 +21,7 @@ ocv_add_dispatched_file_force_all(test_intrin512 TEST AVX512_SKX)
 
 
 set(PARALLEL_ENABLE_PLUGINS_DEFAULT ON)
-if(EMSCRIPTEN OR IOS OR WINRT)
+if(EMSCRIPTEN OR IOS OR XROS OR WINRT)
   set(PARALLEL_ENABLE_PLUGINS_DEFAULT OFF)
 endif()
 # parallel backends configuration
@@ -47,13 +48,6 @@ endif()
 
 if(DEFINED WINRT AND NOT DEFINED ENABLE_WINRT_MODE_NATIVE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /ZW")
-endif()
-
-if(HAVE_CUDA)
-  if(NOT HAVE_opencv_cudev)
-    message(FATAL_ERROR "CUDA: OpenCV requires enabled 'cudev' module from 'opencv_contrib' repository: https://github.com/opencv/opencv_contrib")
-  endif()
-  ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Wenum-compare -Wunused-function -Wshadow)
 endif()
 
 if(CV_TRACE AND HAVE_ITT)
@@ -122,6 +116,12 @@ endif()
 if(HAVE_WIN32_ALIGNED_MALLOC)
   ocv_append_source_file_compile_definitions(${CMAKE_CURRENT_SOURCE_DIR}/src/alloc.cpp "HAVE_WIN32_ALIGNED_MALLOC=1")
 endif()
+if(HAVE_GETAUXVAL)
+  ocv_append_source_file_compile_definitions(${CMAKE_CURRENT_SOURCE_DIR}/src/system.cpp "HAVE_GETAUXVAL=1")
+endif()
+if(HAVE_ELF_AUX_INFO)
+  ocv_append_source_file_compile_definitions(${CMAKE_CURRENT_SOURCE_DIR}/src/system.cpp "HAVE_ELF_AUX_INFO=1")
+endif()
 if(HAVE_VA_INTEL_OLD_HEADER)
   ocv_append_source_file_compile_definitions("${CMAKE_CURRENT_LIST_DIR}/src/va_intel.cpp" "HAVE_VA_INTEL_OLD_HEADER")
 endif()
@@ -153,7 +153,6 @@ elseif(HAVE_CXX11 OR DEFINED OPENCV_ALLOCATOR_STATS_COUNTER_TYPE)
   endif()
 endif()
 
-
 if(PARALLEL_ENABLE_PLUGINS)
   ocv_append_source_file_compile_definitions(${CMAKE_CURRENT_SOURCE_DIR}/src/parallel/parallel.cpp "PARALLEL_ENABLE_PLUGINS=1")
   if(OPENCV_DEBUG_POSTFIX)
@@ -161,6 +160,15 @@ if(PARALLEL_ENABLE_PLUGINS)
   endif()
 endif()
 
+if(HAVE_CUDA)
+  if(NOT HAVE_opencv_cudev)
+    message(FATAL_ERROR "CUDA: OpenCV requires enabled 'cudev' module from 'opencv_contrib' repository: https://github.com/opencv/opencv_contrib")
+  endif()
+  if(ENABLE_CUDA_FIRST_CLASS_LANGUAGE)
+   ocv_module_include_directories(${CUDAToolkit_INCLUDE_DIRS})
+  endif()
+  ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Wenum-compare -Wunused-function -Wshadow)
+endif()
 
 ocv_create_module(${extra_libs})
 
@@ -181,9 +189,17 @@ if(OPENCV_DISABLE_THREAD_SUPPORT)
   ocv_target_compile_definitions(${the_module} PUBLIC "OPENCV_DISABLE_THREAD_SUPPORT=1")
 endif()
 
+if(OPENCV_DISABLE_ENV_SUPPORT)
+  ocv_append_source_file_compile_definitions(${CMAKE_CURRENT_SOURCE_DIR}/src/system.cpp "NO_GETENV")
+endif()
+
 if(OPENCV_SEMIHOSTING)
   ocv_target_compile_definitions(${the_module} PRIVATE "-DOPENCV_SEMIHOSTING")
 endif(OPENCV_SEMIHOSTING)
+
+if(DEFINED OPENCV_ALGO_HINT_DEFAULT)
+  ocv_target_compile_definitions(${the_module} PRIVATE "-DOPENCV_ALGO_HINT_DEFAULT=${OPENCV_ALGO_HINT_DEFAULT}")
+endif(DEFINED OPENCV_ALGO_HINT_DEFAULT)
 
 if(HAVE_HPX)
   ocv_target_link_libraries(${the_module} LINK_PRIVATE "${HPX_LIBRARIES}")
