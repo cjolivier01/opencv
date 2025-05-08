@@ -13,6 +13,8 @@ FATAL: In-source builds are not allowed.
 ")
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+
 include(cmake/OpenCVMinDepVersions.cmake)
 
 if(CMAKE_SYSTEM_NAME MATCHES WindowsPhone OR CMAKE_SYSTEM_NAME MATCHES WindowsStore)
