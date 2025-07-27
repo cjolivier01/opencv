@@ -182,9 +182,9 @@ static std::string printMethod(int method)
     case 2:
         return "SOLVEPNP_P3P";
     case 3:
-        return "SOLVEPNP_DLS (remaped to SOLVEPNP_EPNP)";
+        return "SOLVEPNP_DLS (remapped to SOLVEPNP_EPNP)";
     case 4:
-        return "SOLVEPNP_UPNP (remaped to SOLVEPNP_EPNP)";
+        return "SOLVEPNP_UPNP (remapped to SOLVEPNP_EPNP)";
     case 5:
         return "SOLVEPNP_AP3P";
     case 6:
@@ -207,8 +207,8 @@ public:
         eps[SOLVEPNP_EPNP] = 1.0e-2;
         eps[SOLVEPNP_P3P] = 1.0e-2;
         eps[SOLVEPNP_AP3P] = 1.0e-2;
-        eps[SOLVEPNP_DLS] = 1.0e-2;
-        eps[SOLVEPNP_UPNP] = 1.0e-2;
+        eps[SOLVEPNP_DLS] = 1.0e-2; // DLS is remapped to EPnP, so we use the same threshold
+        eps[SOLVEPNP_UPNP] = 1.0e-2; // UPnP is remapped to EPnP, so we use the same threshold
         eps[SOLVEPNP_IPPE] = 1.0e-2;
         eps[SOLVEPNP_IPPE_SQUARE] = 1.0e-2;
         eps[SOLVEPNP_SQPNP] = 1.0e-2;
@@ -308,11 +308,6 @@ protected:
 
     virtual bool runTest(RNG& rng, int mode, int method, const vector<Point3f>& points, double& errorTrans, double& errorRot)
     {
-        if ((!planar && method == SOLVEPNP_IPPE) || method == SOLVEPNP_IPPE_SQUARE)
-        {
-            return true;
-        }
-
         Mat rvec, tvec;
         vector<int> inliers;
         Mat trueRvec, trueTvec;
@@ -383,6 +378,22 @@ protected:
         {
             for (int method = 0; method < SOLVEPNP_MAX_COUNT; method++)
             {
+                // SOLVEPNP_IPPE need planar object
+                if (!planar && method == SOLVEPNP_IPPE)
+                {
+                    cout << "mode: " << printMode(mode) << ", method: " << printMethod(method) << " -> "
+                         << "Skip for non-planar object" << endl;
+                    continue;
+                }
+
+                // SOLVEPNP_IPPE_SQUARE need planar tag object
+                if (!planarTag && method == SOLVEPNP_IPPE_SQUARE)
+                {
+                    cout << "mode: " << printMode(mode) << ", method: " << printMethod(method) << " -> "
+                         << "Skip for non-planar tag object" << endl;
+                    continue;
+                }
+
                 //To get the same input for each methods
                 RNG rngCopy = rng;
                 std::vector<double> vec_errorTrans, vec_errorRot;
@@ -457,8 +468,8 @@ public:
         eps[SOLVEPNP_EPNP] = 1.0e-6;
         eps[SOLVEPNP_P3P] = 2.0e-4;
         eps[SOLVEPNP_AP3P] = 1.0e-4;
-        eps[SOLVEPNP_DLS] = 1.0e-6; //DLS is remapped to EPnP, so we use the same threshold
-        eps[SOLVEPNP_UPNP] = 1.0e-6; //UPnP is remapped to EPnP, so we use the same threshold
+        eps[SOLVEPNP_DLS] = 1.0e-6; // DLS is remapped to EPnP, so we use the same threshold
+        eps[SOLVEPNP_UPNP] = 1.0e-6; // UPnP is remapped to EPnP, so we use the same threshold
         eps[SOLVEPNP_IPPE] = 1.0e-6;
         eps[SOLVEPNP_IPPE_SQUARE] = 1.0e-6;
         eps[SOLVEPNP_SQPNP] = 1.0e-6;
@@ -486,15 +497,6 @@ public:
 protected:
     virtual bool runTest(RNG& rng, int mode, int method, const vector<Point3f>& points, double& errorTrans, double& errorRot)
     {
-        if ((!planar && (method == SOLVEPNP_IPPE || method == SOLVEPNP_IPPE_SQUARE)) ||
-            (!planarTag && method == SOLVEPNP_IPPE_SQUARE))
-        {
-            errorTrans = -1;
-            errorRot = -1;
-            //SOLVEPNP_IPPE and SOLVEPNP_IPPE_SQUARE need planar object
-            return true;
-        }
-
         //Tune thresholds...
         double epsilon_trans[SOLVEPNP_MAX_COUNT];
         memcpy(epsilon_trans, eps, SOLVEPNP_MAX_COUNT * sizeof(*epsilon_trans));
@@ -507,19 +509,19 @@ protected:
             if (mode == 0)
             {
                 epsilon_trans[SOLVEPNP_EPNP] = 5.0e-3;
-                epsilon_trans[SOLVEPNP_DLS] = 5.0e-3;
-                epsilon_trans[SOLVEPNP_UPNP] = 5.0e-3;
+                epsilon_trans[SOLVEPNP_DLS] = 5.0e-3; // DLS is remapped to EPnP, so we use the same threshold
+                epsilon_trans[SOLVEPNP_UPNP] = 5.0e-3; // UPnP is remapped to EPnP, so we use the same threshold
 
                 epsilon_rot[SOLVEPNP_EPNP] = 5.0e-3;
-                epsilon_rot[SOLVEPNP_DLS] = 5.0e-3;
-                epsilon_rot[SOLVEPNP_UPNP] = 5.0e-3;
+                epsilon_rot[SOLVEPNP_DLS] = 5.0e-3; // DLS is remapped to EPnP, so we use the same threshold
+                epsilon_rot[SOLVEPNP_UPNP] = 5.0e-3; // UPnP is remapped to EPnP, so we use the same threshold
             }
             else
             {
                 epsilon_trans[SOLVEPNP_ITERATIVE] = 1e-4;
                 epsilon_trans[SOLVEPNP_EPNP] = 5e-3;
-                epsilon_trans[SOLVEPNP_DLS] = 5e-3;
-                epsilon_trans[SOLVEPNP_UPNP] = 5e-3;
+                epsilon_trans[SOLVEPNP_DLS] = 5e-3; // DLS is remapped to EPnP, so we use the same threshold
+                epsilon_trans[SOLVEPNP_UPNP] = 5e-3; // UPnP is remapped to EPnP, so we use the same threshold
                 epsilon_trans[SOLVEPNP_P3P] = 1e-4;
                 epsilon_trans[SOLVEPNP_AP3P] = 1e-4;
                 epsilon_trans[SOLVEPNP_IPPE] = 1e-4;
@@ -527,8 +529,8 @@ protected:
 
                 epsilon_rot[SOLVEPNP_ITERATIVE] = 1e-4;
                 epsilon_rot[SOLVEPNP_EPNP] = 5e-3;
-                epsilon_rot[SOLVEPNP_DLS] = 5e-3;
-                epsilon_rot[SOLVEPNP_UPNP] = 5e-3;
+                epsilon_rot[SOLVEPNP_DLS] = 5e-3; // DLS is remapped to EPnP, so we use the same threshold
+                epsilon_rot[SOLVEPNP_UPNP] = 5e-3; // UPnP is remapped to EPnP, so we use the same threshold
                 epsilon_rot[SOLVEPNP_P3P] = 1e-4;
                 epsilon_rot[SOLVEPNP_AP3P] = 1e-4;
                 epsilon_rot[SOLVEPNP_IPPE] = 1e-4;
