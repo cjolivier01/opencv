@@ -113,6 +113,34 @@ static inline CV_NORETURN void throw_no_cuda() { CV_Error(cv::Error::StsNotImple
 
 namespace cv { namespace cuda
 {
+
+    static cudaError_t fillNppStreamContext(NppStreamContext& ctx, cudaStream_t stream) {
+        int device;
+        cudaDeviceProp deviceProp;
+        cudaError_t cu_err = cudaError_t::cudaSuccess;
+        memset(&ctx, 0, sizeof(ctx));
+      
+        if ((cu_err = cudaGetDevice(&device)) != cudaSuccess) {
+          return cu_err;
+        }
+      
+        if ((cu_err = cudaGetDeviceProperties(&deviceProp, device)) != cudaSuccess) {
+          return cu_err;
+        }
+      
+        ctx.hStream = stream;
+        ctx.nCudaDeviceId = device;
+        ctx.nMultiProcessorCount = deviceProp.multiProcessorCount;
+        ctx.nMaxThreadsPerMultiProcessor = deviceProp.maxThreadsPerMultiProcessor;
+        ctx.nMaxThreadsPerBlock = deviceProp.maxThreadsPerBlock;
+        ctx.nSharedMemPerBlock = deviceProp.sharedMemPerBlock;
+      
+        ctx.nCudaDevAttrComputeCapabilityMajor = deviceProp.major;
+        ctx.nCudaDevAttrComputeCapabilityMinor = deviceProp.minor;
+      
+        return cu_err;
+      }
+      
     static inline void checkNppError(int code, const char* file, const int line, const char* func)
     {
         if (code < 0)
@@ -147,7 +175,8 @@ namespace cv { namespace cuda
         inline explicit NppStreamHandler(cudaStream_t newStream)
         {
             nppStreamContext = {};
-            nppSafeCall(nppGetStreamContext(&nppStreamContext));
+            fillNppStreamContext(nppStreamContext, newStream);
+            // nppSafeCall(nppGetStreamContext(&nppStreamContext));
             nppStreamContext.hStream = newStream;
             cudaSafeCall(cudaStreamGetFlags(nppStreamContext.hStream, &nppStreamContext.nStreamFlags));
         }
