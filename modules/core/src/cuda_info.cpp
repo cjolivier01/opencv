@@ -424,7 +424,16 @@ int cv::cuda::DeviceInfo::clockRate() const
 #ifndef HAVE_CUDA
     throw_no_cuda();
 #else
+    int clockRate = 0;
+    cudaError_t err = cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, device_id_);
+#if defined(CUDA_VERSION) && CUDA_VERSION < 13000
+    if (err == cudaSuccess)
+        return clockRate;
     return deviceProps().get(device_id_)->clockRate;
+#else
+    cudaSafeCall(err);
+    return clockRate;
+#endif
 #endif
 }
 
@@ -940,7 +949,13 @@ void cv::cuda::printCudaDeviceInfo(int device)
         if (cores > 0)
             printf("  (%2d) Multiprocessors x (%2d) CUDA Cores/MP:     %d CUDA Cores\n", prop.multiProcessorCount, cores, cores * prop.multiProcessorCount);
 
-        printf("  GPU Clock Speed:                               %.2f GHz\n", prop.clockRate * 1e-6f);
+        int clockRate = 0;
+#if defined(CUDA_VERSION) && CUDA_VERSION < 13000
+        clockRate = prop.clockRate;
+#else
+        cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, dev);
+#endif
+        printf("  GPU Clock Speed:                               %.2f GHz\n", clockRate * 1e-6f);
 
         printf("  Max Texture Dimension Size (x,y,z)             1D=(%d), 2D=(%d,%d), 3D=(%d,%d,%d)\n",
             prop.maxTexture1D, prop.maxTexture2D[0], prop.maxTexture2D[1],

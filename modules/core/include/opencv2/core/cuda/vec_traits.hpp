@@ -54,8 +54,8 @@
 
 namespace cv { namespace cuda { namespace device
 {
-    using cv::cuda::device::compat::double4;
-    using cv::cuda::device::compat::make_double4;
+    using cv::cuda::device::compat::double4Compat;
+    using cv::cuda::device::compat::make_double4_compat;
 
     template<typename T, int N> struct TypeVec;
 
@@ -153,6 +153,10 @@ namespace cv { namespace cuda { namespace device
     OPENCV_CUDA_IMPLEMENT_TYPE_VEC(float)
     OPENCV_CUDA_IMPLEMENT_TYPE_VEC(double)
 
+#if defined(CUDA_VERSION) && CUDA_VERSION >= 13000
+    template<> struct TypeVec<cv::cuda::device::compat::double4, 4> { typedef cv::cuda::device::compat::double4 vec_type; };
+#endif
+
     #undef OPENCV_CUDA_IMPLEMENT_TYPE_VEC
 
     template<> struct TypeVec<schar, 1> { typedef schar vec_type; };
@@ -226,6 +230,17 @@ namespace cv { namespace cuda { namespace device
     OPENCV_CUDA_IMPLEMENT_VEC_TRAITS(uint)
     OPENCV_CUDA_IMPLEMENT_VEC_TRAITS(float)
     OPENCV_CUDA_IMPLEMENT_VEC_TRAITS(double)
+
+#if defined(CUDA_VERSION) && CUDA_VERSION >= 13000
+    template<> struct VecTraits<cv::cuda::device::compat::double4>
+    {
+        typedef double elem_type;
+        enum {cn=4};
+        static __device__ __host__ __forceinline__ cv::cuda::device::compat::double4 all(double v) {return cv::cuda::device::compat::make_double4(v, v, v, v);}
+        static __device__ __host__ __forceinline__ cv::cuda::device::compat::double4 make(double x, double y, double z, double w) {return cv::cuda::device::compat::make_double4(x, y, z, w);}
+        static __device__ __host__ __forceinline__ cv::cuda::device::compat::double4 make(const double* v) {return cv::cuda::device::compat::make_double4(v[0], v[1], v[2], v[3]);}
+    };
+#endif
 
     #undef OPENCV_CUDA_IMPLEMENT_VEC_TRAITS
 

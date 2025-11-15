@@ -84,7 +84,11 @@ public:
     @note This method has a default virtual implementation that throws a "not impemented" error.
     Foreground masking may not be supported by all background subtractors.
     */
-    CV_WRAP virtual void apply(InputArray image, InputArray knownForegroundMask, OutputArray fgmask, double learningRate=-1) = 0;
+    CV_WRAP virtual void apply(InputArray image, InputArray knownForegroundMask, OutputArray fgmask, double learningRate=-1)
+    {
+        CV_UNUSED(knownForegroundMask);
+        apply(image, fgmask, learningRate);
+    }
 
     /** @brief Computes a background image.
 
@@ -232,7 +236,10 @@ public:
     rate. 0 means that the background model is not updated at all, 1 means that the background model
     is completely reinitialized from the last frame.
      */
-    CV_WRAP virtual void apply(InputArray image, InputArray knownForegroundMask, OutputArray fgmask, double learningRate=-1) CV_OVERRIDE = 0;
+    CV_WRAP virtual void apply(InputArray image, InputArray knownForegroundMask, OutputArray fgmask, double learningRate=-1) CV_OVERRIDE
+    {
+        BackgroundSubtractor::apply(image, knownForegroundMask, fgmask, learningRate);
+    }
 };
 
 /** @brief Creates MOG2 Background Subtractor
