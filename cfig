@@ -1,34 +1,52 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# INSTALL_PREFIX=/usr/local
-INSTALL_PREFIX=$CONDA_PREFIX
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-cmake  \
-  -GNinja \
-  -D CMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-  -D PYTHON_EXECUTABLE=$CONDA_PREFIX/bin/python \
-  -D PYTHON_INCLUDE_DIR=$CONDA_PREFIX/include/python3.12 \
-  -D PYTHON3_INCLUDE_DIR=$CONDA_PREFIX/include/python3.12 \
-  -D PYTHON3_INCLUDE_PATH=$CONDA_PREFIX/include/python3.12 \
-  -D PYTHON3_EXECUTABLE=$CONDA_PREFIX/bin/python \
-  -D PYTHON3_LIBRARY=$CONDA_PREFIX/lib/libpython3.so \
-  -D PYTHON_LIBRARY=$CONDA_PREFIX/lib/libpython3.so \
-  -D CMAKE_BUILD_TYPE=RELEASE \
-  -D WITH_CUDA=ON \
-  -D WITH_GSTREAMER=ON \
-  -D WITH_LIBV4L=ON \
-  -D BUILD_opencv_python3=ON \
-  -D OPENCV_GENERATE_PKGCONFIG=ON \
-  -D OPENCV_ENABLE_NONFREE=ON \
-  -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
-  -D OPENCV_ENABLE_NONFREE=ON \
-  -D WITH_NVCUVID=ON \
-  -D WITH_NVCUVENC=ON \
-  -DOPENCV_ENABLE_NONFREE=ON \
-  -DBUILD_TESTS=OFF \
-  -DHAVE_GTK3=1 \
-  -DWITH_GTK=1 \
-  -DWITH_OPENGL=ON \
-  -DWITH_GTXGLEXT=ON \
-  $@ \
-  ..
+# Keep feature selection in one place. Consumers such as opencv-python can
+# request this list without inheriting standalone build paths or build type.
+feature_cmake_args=(
+  -DWITH_CUDA=ON
+  -DWITH_GSTREAMER=ON
+  -DWITH_LIBV4L=ON
+  -DBUILD_opencv_python3=ON
+  -DOPENCV_GENERATE_PKGCONFIG=ON
+  -DOPENCV_ENABLE_NONFREE=ON
+  "-DOPENCV_EXTRA_MODULES_PATH=$SCRIPT_DIR/../opencv_contrib/modules"
+  -DWITH_NVCUVID=ON
+  -DWITH_NVCUVENC=ON
+  -DBUILD_TESTS=OFF
+  -DHAVE_GTK3=1
+  -DWITH_GTK=1
+  -DWITH_OPENGL=ON
+  -DWITH_GTXGLEXT=ON
+)
+
+if [[ "${1:-}" == "--print-wheel-cmake-args0" ]]; then
+  printf '%s\0' "${feature_cmake_args[@]}"
+  exit 0
+fi
+
+if [[ -z "${CONDA_PREFIX:-}" ]]; then
+  echo "error: CONDA_PREFIX must be set for a standalone OpenCV build" >&2
+  exit 1
+fi
+
+standalone_cmake_args=(
+  -GNinja
+  "-DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX"
+  "-DPYTHON_EXECUTABLE=$CONDA_PREFIX/bin/python"
+  "-DPYTHON_INCLUDE_DIR=$CONDA_PREFIX/include/python3.12"
+  "-DPYTHON3_INCLUDE_DIR=$CONDA_PREFIX/include/python3.12"
+  "-DPYTHON3_INCLUDE_PATH=$CONDA_PREFIX/include/python3.12"
+  "-DPYTHON3_EXECUTABLE=$CONDA_PREFIX/bin/python"
+  "-DPYTHON3_LIBRARY=$CONDA_PREFIX/lib/libpython3.so"
+  "-DPYTHON_LIBRARY=$CONDA_PREFIX/lib/libpython3.so"
+  -DCMAKE_BUILD_TYPE=RELEASE
+)
+
+cmake \
+  "${standalone_cmake_args[@]}" \
+  "${feature_cmake_args[@]}" \
+  "$@" \
+  "$SCRIPT_DIR"
